@@ -49,6 +49,10 @@ impl Board {
         output
     } 
 
+    pub fn get_annotations_for_cell(&mut self, i: usize, j: usize) -> HashSet<u32> {
+        self.board[i][j].get_annotations()
+    }
+
     pub fn initial_solve(&mut self) {
         self.annotate_board();
 
@@ -62,11 +66,11 @@ impl Board {
             for i in 0..9 {
                 for j in 0..9 {
                     let numbers = self.board[i][j].get_annotations();
-                    println!("{:?} {}", numbers, numbers.len());
                     if numbers.len() == 1 {
                         updated_cell = true;
                         let result: u32 = numbers.iter().next().unwrap().clone();
                         self.update_and_propegate_cell(i, j, result);
+                        println!("Simple possibility solve - {result} is valid for {}, {}", i, j);
                     }
                 }
             }
@@ -113,10 +117,11 @@ impl Board {
     fn resolve_unique_possibilities_for_a_set_of_9(&mut self, set_of_coordinates: Vec<(usize, usize)>) -> bool {
         let mut updated_cell = false;
 
-        for num in 0..9 {
+        for num in 1..10 {
             let mut idx = None; 
 
             for &(i, j) in &set_of_coordinates {
+
                 if self.board[i][j].get_annotations().contains(&num) {
                     if idx == None {
                         idx = Some((i, j));
@@ -132,7 +137,7 @@ impl Board {
                 Some((i, j)) => {
                     if self.board[i][j].get() == 0 {
                         updated_cell = true;
-                        println!("{num} is valid for {}, {}", i, j);
+                        println!("Unique set solve - {num} is valid for {}, {}", i, j);
                         self.update_and_propegate_cell(i, j, num);
                     } else if self.board[i][j].get() != num {
                         panic!("Attempting to overwrite cell, not allowed!");
@@ -187,9 +192,11 @@ impl Board {
     pub fn annotate_board(&mut self) {
         for i in 0..9 {
             for j in 0..9 {
-                let mut available_numbers: HashSet<u32> = HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-                available_numbers = &available_numbers - &self.get_used_numbers(i, j);
-                self.board[i][j].set_annotations(available_numbers);
+                if self.board[i][j].get() == 0 {
+                    let mut available_numbers: HashSet<u32> = HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                    available_numbers = &available_numbers - &self.get_used_numbers(i, j);
+                    self.board[i][j].set_annotations(available_numbers);
+                }
             }
         }
     }
