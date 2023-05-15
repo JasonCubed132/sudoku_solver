@@ -1,6 +1,5 @@
 use std::collections::HashSet;
-
-use crate::cell::Cell;
+use super::cell::Cell;
 
 pub struct Board {
     board: Vec<Vec<Cell>>
@@ -53,6 +52,44 @@ impl Board {
         self.board[i][j].get_annotations()
     }
 
+    fn generate_all_groups(&mut self) -> Vec<Vec<(usize, usize)>> {
+        let mut groups = Vec::new();
+
+        for row_idx in 0..9 {
+            let mut set = Vec::new();
+            for col_idx in 0..9 {
+                set.push((row_idx, col_idx));
+            }
+
+            groups.push(set);
+        }
+
+        for col_idx in 0..9 {
+            let mut set = Vec::new();
+            for row_idx in 0..9 {
+                set.push((row_idx, col_idx));
+            }
+
+            groups.push(set);
+        }
+
+        for i in 0..3 {
+            for j in 0..3 {
+                let mut set = Vec::new();
+
+                for k in 0..3 {
+                    for l in 0..3 {
+                        set.push((i * 3 + k, j * 3 + l));
+                    }
+                }
+                
+                groups.push(set);
+            }
+        }
+
+        groups
+    }
+
     pub fn initial_solve(&mut self) {
         self.annotate_board();
 
@@ -76,41 +113,15 @@ impl Board {
             }
 
             // More complex solve
-
-            // For every row, find the only cell that contains a possible number.
-            for row_idx in 0..9 {
-                let mut set = Vec::new();
-                for col_idx in 0..9 {
-                    set.push((row_idx, col_idx));
-                }
-
-                updated_cell |= self.resolve_unique_possibilities_for_a_set_of_9(set);
+            for group in self.generate_all_groups() {
+                updated_cell |= self.resolve_unique_possibilities_for_a_set_of_9(group);
             }
 
-            // For every col, find the only cell that contains a possible number.
-            for col_idx in 0..9 {
-                let mut set = Vec::new();
-                for row_idx in 0..9 {
-                    set.push((row_idx, col_idx));
-                }
-
-                updated_cell |= self.resolve_unique_possibilities_for_a_set_of_9(set);
-            }
-
-            // For every box, find the only cell that contains a possible number
-            for i in 0..3 {
-                for j in 0..3 {
-                    let mut set = Vec::new();
-
-                    for k in 0..3 {
-                        for l in 0..3 {
-                            set.push((i * 3 + k, j * 3 + l));
-                        }
-                    }
-                    
-                    updated_cell |= self.resolve_unique_possibilities_for_a_set_of_9(set);
-                }
-            }
+            // This is currently broken
+            // Found out this is called "hidden pair"
+            // for group in self.generate_all_groups() {
+            //     updated_cell |= self.resolve_set_differences_for_set_of_9(group);
+            // }
         }        
     }
 
@@ -147,6 +158,34 @@ impl Board {
         }
 
         updated_cell
+    }
+
+    fn resolve_set_differences_for_set_of_9(&mut self, set_of_coordinates: Vec<(usize, usize)>) -> bool {
+        let mut reversed_sets = Vec::new();
+                
+        for num in 1..10 {
+            let mut set = HashSet::new();
+            for &(i, j) in &set_of_coordinates {
+                if self.board[i][j].get_annotations().contains(&num) {
+                    set.insert((i, j));
+                }
+            }
+
+            reversed_sets.push(set);
+        }
+
+        for num_a in 0..reversed_sets.len() {
+            for num_b in 0..reversed_sets.len() {
+                let diff = &reversed_sets[num_a] - &reversed_sets[num_b];
+                if diff.len() == 1 {
+                    let (i, j) = diff.iter().next().unwrap().clone();
+                    self.update_and_propegate_cell(i, j, u32::try_from(num_a + 1).unwrap());
+                    return true; // Have to return early as all of these need to be recalculated.
+                }
+            }
+        }
+
+        false
     }
 
     fn update_and_propegate_cell(&mut self, i: usize, j: usize, num: u32) {

@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+#[derive(PartialEq, Debug)]
 pub struct Cell {
     contents: u32,
     annotations: HashSet<u32>
@@ -48,5 +49,67 @@ impl Cell {
 
     pub fn clear_annotations(&mut self) {
         self.annotations.clear()
+    }
+}
+
+#[cfg(test)]
+mod cell_tests {
+    use super::*;
+
+    #[test]
+    fn can_make_blank_cell() {
+        let cell = Cell::new_blank();
+        let cell2 = Cell::new_blank();
+
+        assert_eq!(cell, cell2);
+    }
+
+    #[test]
+    fn can_make_filled_cell() {
+        let cell = Cell::new_from_number(1);
+
+        assert_eq!(cell.get(), 1);
+    }
+
+    #[test]
+    fn can_set_cell() {
+        let mut cell = Cell::new_blank();
+        cell.set(1);
+
+        assert_eq!(cell.get(), 1);
+    }
+
+    #[test]
+    fn can_add_annotation() {
+        let mut cell = Cell::new_blank();
+        cell.add_annotation(1);
+
+        assert_eq!(cell.get_annotations(), HashSet::from([1]));
+    }
+
+    #[test]
+    fn can_remote_annotation() {
+        let mut cell = Cell::new_blank();
+        cell.add_annotation(1);
+        cell.remove_annotation(1);
+
+        assert_eq!(cell.get_annotations(), HashSet::from([]));
+    }
+
+    #[test]
+    fn can_set_annotations() {
+        let mut cell = Cell::new_blank();
+        cell.set_annotations(HashSet::from([1]));
+
+        assert_eq!(cell.get_annotations(), HashSet::from([1]));
+    }
+
+    #[test]
+    fn can_clear_annotations() {
+        let mut cell = Cell::new_blank();
+        cell.set_annotations(HashSet::from([1]));
+        cell.clear_annotations();
+
+        assert_eq!(cell.get_annotations(), HashSet::from([]));
     }
 }
